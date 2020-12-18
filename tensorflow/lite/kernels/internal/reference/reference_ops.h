@@ -1156,7 +1156,7 @@ template <typename Scalar>
 void Split(const SplitParams& params, const RuntimeShape& input_shape,
            const Scalar* input_data, const RuntimeShape* const* output_shapes,
            Scalar* const* output_data) {
-  ScopedProfilingLabelWrapper label("Split");
+  ruy::profiler::ScopeLabel label("Split");
   const int split_dimensions = input_shape.DimensionsCount();
   int axis = params.axis < 0 ? params.axis + split_dimensions : params.axis;
   int outputs_count = params.num_split;
