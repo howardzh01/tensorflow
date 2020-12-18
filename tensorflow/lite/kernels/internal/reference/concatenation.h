@@ -21,6 +21,8 @@ limitations under the License.
 #include "tensorflow/lite/kernels/internal/cppmath.h"
 #include "tensorflow/lite/kernels/internal/types.h"
 
+#include <vector>
+
 namespace tflite {
 namespace reference_ops {
 
@@ -57,6 +59,7 @@ inline void Concatenation(const ConcatenationParams& params,
     base_inner_size *= output_shape.Dims(i);
   }
 
+    /*
   Scalar* output_ptr = output_data;
   for (int k = 0; k < outer_size; k++) {
     for (int i = 0; i < inputs_count; ++i) {
@@ -64,6 +67,28 @@ inline void Concatenation(const ConcatenationParams& params,
       const Scalar* input_ptr = input_data[i] + k * copy_size;
       memcpy(output_ptr, input_ptr, copy_size * sizeof(Scalar));
       output_ptr += copy_size;
+    }
+  }
+  
+  */
+  
+  // optimized 
+  std::vector<int> copy_sizes;
+  std::vector<Scalar*> input_ptrs;
+  
+  copy_sizes.reserve(inputs_count);
+  input_ptrs.reserve(inputs_count);
+  
+  for(int i = 0; i < inputs_count; ++i) {
+    copy_sizes.push_back(input_shapes[i]->Dims(axis) * base_inner_size);
+    input_ptrs.push_back(const_cast<Scalar*>(input_data[i]));
+  }
+  Scalar* output_ptr = output_data;
+  for(int k = 0; k < outer_size; k++) {
+    for(int i = 0; i < inputs_count; i++) {
+      memcpy(output_ptr, input_ptrs[i], copy_sizes[i] * sizeof(Scalar));
+      output_ptr += copy_sizes[i];
+      input_ptrs[i] += copy_sizes[i];
     }
   }
 }

@@ -1184,7 +1184,10 @@ void Split(const SplitParams& params, const RuntimeShape& input_shape,
     base_inner_size *= input_shape.Dims(i);
   }
 
+  
   const Scalar* input_ptr = input_data;
+  
+  /*
   for (int k = 0; k < outer_size; k++) {
     for (int i = 0; i < outputs_count; ++i) {
       const int copy_size = output_shapes[i]->Dims(axis) * base_inner_size;
@@ -1193,6 +1196,27 @@ void Split(const SplitParams& params, const RuntimeShape& input_shape,
       input_ptr += copy_size;
     }
   }
+  */
+  
+  // optimized 
+  std::vector<int> copy_sizes;
+  std::vector<Scalar*> output_ptrs;
+  
+  copy_sizes.reserve(outputs_count);
+  output_ptrs.reserve(outputs_count);
+  
+  for(int i = 0; i < outputs_count; ++i) {
+    copy_sizes.push_back(output_shapes[i]->Dims(axis) * base_inner_size);
+    output_ptrs.push_back(const_cast<Scalar*>(output_data[i]));
+  }
+  for(int k = 0; k < outer_size; k++) {
+    for(int i = 0; i < outputs_count; i++) {
+      memcpy(output_ptrs[i], input_ptr, copy_sizes[i] * sizeof(Scalar));
+      output_ptrs[i] += copy_sizes[i];
+      input_ptr      += copy_sizes[i];
+    }
+  }
+  
 }
 
 inline int NodeOffset(int b, int h, int w, int height, int width) {

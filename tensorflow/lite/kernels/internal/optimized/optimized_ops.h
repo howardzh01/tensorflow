@@ -5593,7 +5593,7 @@ inline void Slice(const tflite::SliceParams& op_params,
                   const RuntimeShape& input_shape,
                   const RuntimeShape& output_shape,
                   SequentialTensorWriter<T>* writer) {
-  ruy::profiler::ScopeLabel label("Slice");
+  gemmlowp::ScopedProfilingLabel label("Slice");
   const RuntimeShape ext_shape = RuntimeShape::ExtendedShape(4, input_shape);
   // TODO(dkalenichenko): This op only supports 4D tensors or smaller.
   TFLITE_DCHECK_LE(op_params.begin_count, 4);
@@ -5617,13 +5617,14 @@ inline void Slice(const tflite::SliceParams& op_params,
   const int stop_d = (size_count < 1 || op_params.size[size_count - 1] == -1)
                          ? ext_shape.Dims(3)
                          : start_d + op_params.size[size_count - 1];
-
+                         
+  const int len = stop_d - start_d;
   for (int in_b = start_b; in_b < stop_b; ++in_b) {
     for (int in_h = start_h; in_h < stop_h; ++in_h) {
       for (int in_w = start_w; in_w < stop_w; ++in_w) {
-        const int len = stop_d - start_d;
-        if (len > 0)
-          writer->WriteN(Offset(ext_shape, in_b, in_h, in_w, start_d), len);
+        //const int len = stop_d - start_d;
+        //if (len > 0)
+        writer->WriteN(Offset(ext_shape, in_b, in_h, in_w, start_d), len);
       }
     }
   }
