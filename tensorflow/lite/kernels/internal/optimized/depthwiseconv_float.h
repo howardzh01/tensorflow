@@ -1183,7 +1183,6 @@ inline void DepthwiseConvImpl(
 //           output_ptr += 4;
 //         }
 // #endif
-
 #ifdef USE_NEON
         // Handle 16 values at a time
         // for (; i <= num_output_values - 16; i += 16) {
@@ -1236,7 +1235,6 @@ inline void DepthwiseConvImpl(
         //     // } //replace with memcpy
         //   }
         //   output_ptr += 16;
-
         // }
         // // Handle 4 values at a time
         // for(int j=0; j<16; j++){
@@ -1266,7 +1264,9 @@ inline void DepthwiseConvImpl(
             // vst1q_f32(output_ptr, inp);
             int num_input_copy = output_depth - filter_depth;
             // TFLITE_LOG(INFO) << "copy i " << i << " " << filter_depth << remainder;
-            memcpy(output_ptr, input_start+i, num_input_copy*sizeof(float));
+            if (num_input_copy != 0) {
+              memcpy(output_ptr, input_start+i, num_input_copy*sizeof(float));
+            }
             output_ptr += num_input_copy-4;
             i += num_input_copy-4;
             remainder = 0;
@@ -1295,7 +1295,9 @@ inline void DepthwiseConvImpl(
             
             int num_input_copy = output_depth - filter_depth;
             // TFLITE_LOG(INFO) << input_start+i << " index " << i << " "<< num_input_copy;
-            memcpy(output_ptr, input_start+i, num_input_copy*sizeof(float));
+            if (num_input_copy != 0) {
+              memcpy(output_ptr, input_start+i, num_input_copy*sizeof(float));
+            }
             output_ptr += num_input_copy;
             i += num_input_copy-1;
             remainder = 0;
