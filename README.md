@@ -7,6 +7,8 @@ Using the compare tool can show the exact files that are changed.
 
 To use these optimized version, the bypass factor used will be represented in the dilation factor of the convolution operation. 
 In the future, we hope to introduce another argument instead of doing this "hackish" solution.
+
+To use the optimizations that don't involve overriding the dilation parameter, use the branch called "yilun".
 ******
 
 
