@@ -1,3 +1,15 @@
+******
+README specific to this forked version
+
+This is a forked repository from TensorFlow (June 2020 master branch). 
+The goal is to fuse split and concatenation operations into convolution and depthwise-convolution of TFLite. 
+Using the compare tool can show the exact files that are changed. 
+
+To use these optimized version, the bypass factor used will be represented in the dilation factor of the convolution operation. 
+In the future, we hope to introduce another argument instead of doing this "hackish" solution.
+******
+
+
 <div align="center">
   <img src="https://www.tensorflow.org/images/tf_logo_social.png">
 </div>
