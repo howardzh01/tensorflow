@@ -573,7 +573,6 @@ BUILTIN_KERNEL_SRCS = [
     "where.cc",
     "while.cc",
     "zeros_like.cc",
-    "split_conv_cat.cc",
 ]
 
 BUILTIN_KERNEL_DEPS = [

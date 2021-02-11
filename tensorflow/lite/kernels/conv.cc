@@ -758,6 +758,13 @@ void EvalFloat(TfLiteContext* context, TfLiteNode* node,
     case kCblasOptimized:
     case kGenericOptimized: {
       if(params->dilation_height_factor != 1) {
+        /*
+        Dilation is used to represent bypass. Hence, this implementation does not support convolutions with dilation != 1
+        Recompute padding because dilation is used to represent bypass. Hence dilation_height_factor=bypass
+        We set the num_filters = num_out_channel - bypass
+        In the implementation of convolution, if num_filters != num_out_channel, 
+        the missing channels are bypassed (concatenated usually) and SpecialConvolution function is called
+        */
         RuntimeShape filter_shape = GetTensorShape(filter);
         RuntimeShape input_shape = GetTensorShape(input);
         RuntimeShape output_shape = GetTensorShape(output);
@@ -772,7 +779,6 @@ void EvalFloat(TfLiteContext* context, TfLiteNode* node,
                           GetTensorData<float>(im2col),
                           CpuBackendContext::GetFromContext(context));
       }
-      // output->dims->data[3] = std::max(filter_shape.Dims(0), std::min(input->dims->data[3], output->dims->data[3]));
       else{
         optimized_ops::Conv(op_params, GetTensorShape(input),
                                   GetTensorData<float>(input), GetTensorShape(filter),

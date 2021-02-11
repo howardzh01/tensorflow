@@ -296,6 +296,10 @@ TfLiteStatus EvalFloat(TfLiteContext* context, TfLiteNode* node,
   op_params.padding_values.height = data->padding.height;
   op_params.stride_width = params->stride_width;
   op_params.stride_height = params->stride_height;
+  /*
+  Dilation is used to represent bypass. 
+  Hence, this implementation does not support convolution withdilation != 1
+  */
   op_params.dilation_width_factor = 1;
   op_params.dilation_height_factor = 1; //hijak dilation
   op_params.float_activation_min = output_activation_min;
@@ -312,16 +316,16 @@ TfLiteStatus EvalFloat(TfLiteContext* context, TfLiteNode* node,
     RuntimeShape filter_shape = GetTensorShape(filter);
     RuntimeShape input_shape = GetTensorShape(input);
     RuntimeShape output_shape = GetTensorShape(output);
+    /*
+    Recompute padding because dilation is used to represent bypass. Hence dilation_height_factor=bypass
+    We set the num_filters = num_out_channel - bypass
+    In the implementation of depthwise, if num_filters != num_out_channel, the missing channels are bypassed (concatenated usually) 
+    */
     if(params->dilation_height_factor != 1) {
       op_params.padding_values.width = tflite::ComputePadding(params->stride_width, 1, input_shape.Dims(2), filter_shape.Dims(2), output_shape.Dims(2));
       op_params.padding_values.height = tflite::ComputePadding(params->stride_height, 1, input_shape.Dims(1), filter_shape.Dims(1), output_shape.Dims(1));
       filter_shape.SetDim(3, filter_shape.Dims(3)-params->dilation_height_factor); 
     }
-    // TFLITE_LOG(INFO) << "dilation factors " << params->dilation_width_factor <<" "<< params->dilation_height_factor;
-    // for (int i =0; i < 4; i++) {
-    //   TFLITE_LOG(INFO) << "input/filter/out " << i << ": " 
-    //   << GetTensorShape(input).Dims(i) << filter_shape.Dims(i) << GetTensorShape(output).Dims(i);
-    // }
 
     optimized_ops::DepthwiseConv<float, float>(
         op_params, input_shape, GetTensorData<float>(input),

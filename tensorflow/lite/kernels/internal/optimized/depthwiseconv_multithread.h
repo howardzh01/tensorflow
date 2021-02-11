@@ -21,8 +21,6 @@ limitations under the License.
 #include "tensorflow/lite/kernels/internal/optimized/depthwiseconv_float.h"
 #include "tensorflow/lite/kernels/internal/optimized/depthwiseconv_uint8.h"
 
-#include "tensorflow/lite/tools/logging.h"
-
 namespace tflite {
 namespace optimized_ops {
 
@@ -85,7 +83,7 @@ inline int HowManyConvThreads(const RuntimeShape& output_shape,
   static constexpr int kMinMulPerThread = 1 << 13;  // 8k
   const int filter_height = filter_shape.Dims(1);
   const int filter_width = filter_shape.Dims(2);
-  const int num_muls = output_shape.FlatSize() * filter_shape.Dims(1) * filter_shape.Dims(2);
+  const int num_muls = output_shape.FlatSize() * filter_height * filter_width;
   // Try to avoid real runtime divisions if possible by dividing by a
   // compile-time constant.
   int thread_count = std::max(1, num_muls / kMinMulPerThread);
@@ -147,15 +145,15 @@ inline void DepthwiseConv(const DepthwiseParams& params,
 
   CpuFlags cpu_flags;
   GetCpuFlags(&cpu_flags);
-  
+
   if (thread_count == 1) {
-    // TFLITE_LOG(INFO) << "DepthwiseConvImpl " << thread_count;
     DepthwiseConvImpl(params, input_shape, input_data, filter_shape,
                       filter_data, bias_shape, bias_data, output_shape,
                       output_data, cpu_flags, /*thread_start=*/0,
                       /*thread_end=*/output_height, /*thread_dim=*/1);
     return;
   }
+
   int thread_dim, thread_dim_size;
   if (MultithreadAlongBatches(thread_count, output_batches)) {
     thread_dim = 0;

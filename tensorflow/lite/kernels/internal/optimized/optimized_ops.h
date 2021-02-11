@@ -1325,10 +1325,6 @@ inline void Conv(const ConvParams& params, const RuntimeShape& input_shape,
   int m = FlatSizeSkipDim(*gemm_input_shape, gemm_input_dims - 1);
   int n = output_shape.Dims(3);
   
-  // TFLITE_LOG(INFO) << "out chan " << n;
-  // TFLITE_LOG(INFO) << "hw " <<m;
-  // TFLITE_LOG(INFO) << "gemm_in_dim " << gemm_input_dims - 1;
-  // TFLITE_LOG(INFO) << "shape " << gemm_input_shape->DimsData()[0] << gemm_input_shape->DimsData()[1] << gemm_input_shape->DimsData()[2] << gemm_input_shape->DimsData()[3];
   int k = gemm_input_shape->Dims(gemm_input_dims - 1);
 
 #if defined(TF_LITE_USE_CBLAS) && defined(__APPLE__)
@@ -1393,10 +1389,6 @@ inline void SpecialConv(const ConvParams& params, const RuntimeShape& input_shap
   TFLITE_DCHECK_EQ(input_shape.DimensionsCount(), 4);
   TFLITE_DCHECK_EQ(filter_shape.DimensionsCount(), 4);
   TFLITE_DCHECK_EQ(output_shape.DimensionsCount(), 4);
-  // for(int i=0; i<2; i++){
-  //       TFLITE_LOG(INFO) << "bias " << i << ": " << bias_shape[i];
-  //                }
-  // NB: the float 0.0f value is represented by all zero bytes.
   const uint8 float_zero_byte = 0x00;
   const float* gemm_input_data = nullptr;
   const RuntimeShape* gemm_input_shape = nullptr;
@@ -1475,35 +1467,13 @@ inline void SpecialConv(const ConvParams& params, const RuntimeShape& input_shap
   int filter_depth = n;
   int input_depth = input_shape.Dims(3);
   int output_depth = output_shape.Dims(3);
-  // int output_depth = std::max(filter_depth, std::min(output_shape.Dims(3), input_depth)); #fixed in conv.cc
-  // output_shape.setDim(3, output_depth); NEED to do for actual operation
 
-  // TFLITE_LOG(INFO) << "n " << n << " k " << k << " m " << m;
-
-  // for(int i=0; i<input_shape.Dims(0)*input_shape.Dims(1)*input_shape.Dims(2); i++)
-  //     for(int j=0; j<input_depth; j++){
-  //       TFLITE_LOG(INFO) << "input " << i << ", " << j << ": " << input_data[i*input_depth+j];
-  //     }
-
-  //   for(int i=0; i<m; i++)
-  //     for(int j=0; j<output_depth; j++){
-  //       TFLITE_LOG(INFO) << "output " << i << ", " << j << ": " << output_data[i*output_depth+j];
-  //     }
-
+  // in the case where filter_depth != output_depth, concatenation is needed
   if (filter_depth < output_depth) {
-    // m = batch x height x width)
-    
-    // for(int i=0; i<n; i++)
-    //   for(int j=0; j<k; j++){
-    //     TFLITE_LOG(INFO) << "filter " << i << ", " << j << ": " << filter_data[i];
-    //   }
-    
-    // CPP Wrong
-    // memcpy(&output_data[m*n], &input_data[m*n], (output_depth-filter_depth)*sizeof(float));
+    // m = batch x height x width
 
-    // CPP Perfect Pad
-    // [0, 1, 2, 0, 1, 2, 0, 1, 2, ,0, 1, 2 , , 0, 1, 2, , ]
-    // [0, 1, 2, 3, 0, 1, 2, 3]
+    // CPP Perfect Pad 
+    // Assumes padding='SAME'
     float* target_ptr = &output_data[(m-1)*output_depth];
     float* copy_ptr = &output_data[(m-1)*n];
     int copy_size = filter_depth*sizeof(float);
@@ -1521,7 +1491,7 @@ inline void SpecialConv(const ConvParams& params, const RuntimeShape& input_shap
       input_ptr += input_depth;
     }
     
-    // //CPP General
+    // //CPP General (can be used for any type of padding)
     // const int batch = input_shape.Dims(0);
     // const int output_height = output_shape.Dims(1);
     // const int output_width = output_shape.Dims(2);
@@ -1552,16 +1522,6 @@ inline void SpecialConv(const ConvParams& params, const RuntimeShape& input_shap
     //   }
     //   input_ptr += height_diff;
     // }
-    
-
-
-    // TFLITE_LOG(INFO) << "after"  << output_data[n*m-1] << output_data[n*m] << output_data[n*m+1];
-    // for(int i=0; i<m; i++)
-    //   for(int j=0; j<output_depth; j++){
-    //     TFLITE_LOG(INFO) << "output after concat " << i << ", " << j << ": " << output_data[i*output_depth+j];
-    //   }   
-    
-    // Concatenate prev_activ and input data together
     
   }
 
